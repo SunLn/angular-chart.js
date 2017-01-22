@@ -100,6 +100,7 @@
           chartData: '=?',
           chartLabels: '=?',
           chartOptions: '=?',
+          chartDashLines: '=?',
           chartSeries: '=?',
           chartColours: '=?',
           chartLegend: '@',
@@ -114,7 +115,8 @@
 
           if (usingExcanvas) window.G_vmlCanvasManager.initElement(elem[0]);
 
-          ['data', 'labels', 'options', 'series', 'colours', 'legend', 'click', 'hover'].forEach(deprecated);
+          ['data', 'labels', 'options', 'series', 'colours',
+           'legend', 'click', 'hover', 'dashLines'].forEach(deprecated);
           function aliasVar (fromName, toName) {
             scope.$watch(fromName, function (newVal) {
               if (typeof newVal === 'undefined') return;
@@ -128,6 +130,7 @@
           aliasVar('chartOptions', 'options');
           aliasVar('chartSeries', 'series');
           aliasVar('chartColours', 'colours');
+          aliasVar('chartDashLines', 'dashLines');
           aliasVar('chartLegend', 'legend');
           aliasVar('chartClick', 'click');
           aliasVar('chartHover', 'hover');
@@ -151,6 +154,7 @@
           scope.$watch('labels', resetChart, true);
           scope.$watch('options', resetChart, true);
           scope.$watch('colours', resetChart, true);
+          scope.$watch('dashLines', resetChart, true);
 
           scope.$watch('chartType', function (newVal, oldVal) {
             if (isEmpty(newVal)) return;
@@ -187,8 +191,8 @@
             scope.colours = getColours(type, scope);
             var cvs = elem[0], ctx = cvs.getContext('2d');
             var data = Array.isArray(scope.data[0]) ?
-              getDataSets(scope.labels, scope.data, scope.series || [], scope.colours) :
-              getData(scope.labels, scope.data, scope.colours);
+              getDataSets(scope.labels, scope.data, scope.series || [], scope.colours, scope.dashLines) :
+              getData(scope.labels, scope.data, scope.colours, scope.dashLines);
             var options = angular.extend({}, ChartJs.getOptions(type), scope.options);
             chart = new ChartJs.Chart(ctx)[type](data, options);
             scope.$emit('create', chart);
@@ -298,23 +302,28 @@
       return [r, g, b];
     }
 
-    function getDataSets (labels, data, series, colours) {
+    function getDataSets (labels, data, series, colours, dashLines) {
+      dashLines = dashLines && dashLines[0] || [];
       return {
         labels: labels,
+        dashLines: dashLines,
         datasets: data.map(function (item, i) {
           return angular.extend({}, colours[i], {
             label: series[i],
+            dashLine: dashLines[i] || false,
             data: item
           });
         })
       };
     }
 
-    function getData (labels, data, colours) {
+    function getData (labels, data, colours, dashLines) {
+      dashLines = dashLines && dashLines[0] || [];
       return labels.map(function (label, i) {
         return angular.extend({}, colours[i], {
           label: label,
           value: data[i],
+          dashLine: dashLines[i],
           color: colours[i].strokeColor,
           highlight: colours[i].pointHighlightStroke
         });
